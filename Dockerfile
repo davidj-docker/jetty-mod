@@ -34,7 +34,7 @@ ENV JETTY_BASE /var/lib/jetty
 RUN mkdir -p "$JETTY_BASE"
 WORKDIR $JETTY_BASE
 
-RUN sed -i 's/<!-- Uncomment/\<Call name\=\"addCustomizer\"\>\<Arg\>\<New class\=\"org.eclipse.jetty.server.ForwardedRequestCustomizer\"\/\>\<\/Arg\>\<\/Call\>\<!--/g' /usr/local/jetty/etc/jetty.xml
+RUN sed -i 's#<Set name="persistentConnectionsEnabled"><Property name="jetty.httpConfig.persistentConnectionsEnabled" default="true"/></Set>#<Set name="persistentConnectionsEnabled"><Property name="jetty.httpConfig.persistentConnectionsEnabled" default="true"/></Set><Call name="addCustomizer"><Arg><New class="org.eclipse.jetty.server.ForwardedRequestCustomizer"/></Arg></Call>#g' /usr/local/jetty/etc/jetty.xml
 
 # Get the list of modules in the default start.ini and build new base with those modules, then add setuid
 RUN modules="$(grep -- ^--module= "$JETTY_HOME/start.ini" | cut -d= -f2 | paste -d, -s)" \
@@ -48,8 +48,8 @@ RUN set -xe \
 	&& mkdir -p "$JETTY_RUN" "$TMPDIR" \
 	&& chown -R jetty:jetty "$JETTY_RUN" "$TMPDIR" "$JETTY_BASE"
 
-COPY docker-entrypoint.bash /
+COPY docker-entrypoint.bash /docker-entrypoint.bash
 
 EXPOSE 8080
-ENTRYPOINT ["/docker-entrypoint.bash"]
+ENTRYPOINT ["sh", "/docker-entrypoint.bash"]
 CMD ["java","-Djava.io.tmpdir=/tmp/jetty","-jar","/usr/local/jetty/start.jar"]
